@@ -47,10 +47,10 @@ jobs:
 
       - name: Deploy to ECS via SSH
         env:
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-          ECS_HOST: ${{ secrets.ECS_HOST }}
-          ECS_PORT: ${{ secrets.ECS_PORT }}
-          ECS_USER: ${{ secrets.ECS_USER }}
+          SSH_PRIVATE_KEY: ${{ secrets.ALIYUN_SSH_PRIVATE_KEY }}
+          ECS_HOST: ${{ secrets.ALIYUN_ECS_HOST }}
+          ECS_PORT: ${{ secrets.ALIYUN_ECS_PORT }}
+          ECS_USER: ${{ secrets.ALIYUN_ECS_USER }}
         run: |
           # 创建临时密钥文件
           mkdir -p ~/.ssh
