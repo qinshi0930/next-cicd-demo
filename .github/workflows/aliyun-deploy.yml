@@ -1,0 +1,60 @@
+name: Deploy Next.js to ECS
+
+on:
+  push:
+    branches: [ main ]  # 可根据需要修改触发分支
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'pnpm'
+
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build Next.js app
+        run: pnpm build
+
+      - name: Deploy to ECS via SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          ECS_HOST: ${{ secrets.ECS_HOST }}
+          ECS_PORT: ${{ secrets.ECS_PORT }}
+          ECS_USER: ${{ secrets.ECS_USER }}
+        run: |
+          # 创建临时密钥文件
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+
+          # 同步构建产物到 ECS（排除 node_modules、.next/cache 等）
+          rsync -avz \
+            --exclude='node_modules' \
+            --exclude='.git' \
+            --exclude='.next/cache' \
+            --exclude='pnpm-lock.yaml' \
+            ./ \
+            -e "ssh -p $ECS_PORT -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
+            $ECS_USER@$ECS_HOST:/var/www/next-app/
+
+          # 远程执行部署脚本
+          ssh -p $ECS_PORT -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no \
+            $ECS_USER@$ECS_HOST << 'EOF'
+            cd /var/www/next-app
+            pnpm install --prod  # 只安装生产依赖
+            pm2 delete next-app || true
+            pm2 start npm --name "next-app" -- start
+            pm2 save
+          EOF
