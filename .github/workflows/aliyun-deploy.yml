@@ -4,6 +4,10 @@ on:
   push:
     branches: [ main ]  # 可根据需要修改触发分支
 
+env:
+  PNPM_VERSION: '10'
+  NODE_VERSION: '22'
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -12,19 +16,31 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: 🐿️ Setup pnpm
+        uses: pnpm/action-setup@v2
+        id: pnpm-setup
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: ⎔ Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
+      - name: 💾 Cache pnpm dependencies
+        uses: actions/cache@v4
+        id: pnpm-cache
         with:
-          version: 10
+          path: |
+            ~/.pnpm-store
+            node_modules
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
 
-      - name: Install dependencies
-        run: pnpm install
+      - name: 📦 Install dependencies
+        run: pnpm install --frozen-lockfile
 
       - name: Build Next.js app
         run: pnpm build
