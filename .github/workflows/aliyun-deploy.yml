@@ -69,10 +69,4 @@ jobs:
 
           # 远程执行部署脚本
           ssh -p $ECS_PORT -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no \
-            $ECS_USER@$ECS_HOST << 'EOF'
-            cd /var/www/next-app
-            pnpm install --prod  # 只安装生产依赖
-            pm2 delete next-app || true
-            pm2 start npm --name "next-app" -- start
-            pm2 save
-          EOF
+            $ECS_USER@$ECS_HOST "zsh /var/www/next-app/deploy.sh"
