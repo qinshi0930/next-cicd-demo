@@ -8,7 +8,6 @@ export async function GET(
   try {
     const owner = 'qinshi0930';
     const repo = 'ContentBase';
-	console.log(`${JSON.stringify(await params)}`)
     const path = (await params).slug.join('/'); // e.g., ['docs', 'guide.md']
 
     const content = await fetchFileFromRepo(owner, repo, path);
