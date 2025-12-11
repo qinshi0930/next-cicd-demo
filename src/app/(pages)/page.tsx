@@ -1,6 +1,14 @@
+"use client";
 import Image from "next/image";
+import { useEffect } from "react";
 
 export default function Home() {
+	useEffect(() => {
+		fetch('/api/posts/docs/tech')
+			.then(res => res.text())
+			.then(md => console.log(`${JSON.stringify(md)}`));
+	}, []);
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
       <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
