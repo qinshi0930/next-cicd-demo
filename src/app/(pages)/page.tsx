@@ -1,17 +1,9 @@
-import MdxComponent from "@/common/elements/MdxComponent";
+import MdxComponent from "@/common/components/elements/MdxComponent";
+import { fetchFileFromRepo } from "@/lib/github";
 import { Suspense } from "react";
 
 export default async function Home() {
-	const baseUrl = 'http://localhost:3000'
-	const res = fetch(`${baseUrl}/api/posts/docs/tech/md001.md`);
-	const markdown = await (await res).text()
-	// const [markdown, setMarkdown] = useState("");
-	// useEffect(() => {
-	// 	fetch('/api/posts/docs/tech/md001.md')
-	// 		.then(res => res.text())
-	// 		.then(md => setMarkdown(md));
-	// }, []);
-
+	const markdown = await fetchFileFromRepo(['docs', 'tech', 'md001.md'].join('/'));
 
   return (
 	<Suspense>

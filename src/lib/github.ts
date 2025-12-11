@@ -3,8 +3,11 @@ import jwt from 'jsonwebtoken';
 import axios from 'axios';
 
 const APP_ID = process.env.GITHUB_APP_ID!;
+const APP_OWNER = process.env.GITHUB_APP_OWNER!;
+const APP_REPO = process.env.GITHUB_APP_REPO!;
 const PRIVATE_KEY = Buffer.from(process.env.GITHUB_PRIVATE_KEY_BASE64!, 'base64').toString('utf8');
 const INSTALLATION_ID = process.env.GITHUB_INSTALLATION_ID!;
+
 
 let cachedToken: string | null = null;
 let tokenExpiry: number | null = null;
@@ -54,10 +57,10 @@ export async function getInstallationToken(): Promise<string> {
 /**
  * 获取私有仓库中的文件内容（如 .md）
  */
-export async function fetchFileFromRepo(owner: string, repo: string, path: string): Promise<string> {
+export async function fetchFileFromRepo(path: string): Promise<string> {
   const token = await getInstallationToken();
   const response = await axios.get(
-    `https://api.github.com/repos/${owner}/${repo}/contents/${path}`,
+    `https://api.github.com/repos/${APP_OWNER}/${APP_REPO}/contents/${path}`,
     {
       headers: {
         Authorization: `token ${token}`,

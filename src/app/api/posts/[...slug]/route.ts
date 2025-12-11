@@ -6,11 +6,9 @@ export async function GET(
   { params }: { params: Promise<{ slug: string[] }> }
 ) {
   try {
-    const owner = 'qinshi0930';
-    const repo = 'ContentBase';
     const path = (await params).slug.join('/'); // e.g., ['docs', 'guide.md']
 
-    const content = await fetchFileFromRepo(owner, repo, path);
+    const content = await fetchFileFromRepo(path);
     return new Response(content, {
       headers: { 'Content-Type': 'text/markdown; charset=utf-8' },
     });
