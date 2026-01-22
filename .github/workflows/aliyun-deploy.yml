@@ -54,6 +54,7 @@ jobs:
       - name: Deploy to ECS via SSH
         env:
           SSH_PRIVATE_KEY: ${{ secrets.ALIYUN_SSH_PRIVATE_KEY }}
+          SSH_CA_PRIVATE_KEY: ${{ secrets.SSH_CA_PRIVATE_KEY }}
           ECS_HOST: ${{ secrets.ALIYUN_ECS_HOST }}
           ECS_PORT: ${{ secrets.ALIYUN_ECS_PORT }}
           ECS_USER: ${{ secrets.ALIYUN_ECS_USER }}
@@ -66,18 +67,29 @@ jobs:
           # 创建临时密钥文件
           mkdir -p ~/.ssh
           echo "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
+          echo "$SSH_CA_PRIVATE_KEY" > ~/.ssh/ca_key
+          chmod 600 ~/.ssh/deploy_key ~/.ssh/ca_key
 
-          # 同步构建产物到 ECS（排除 node_modules、.next/cache 等）
+          # 1. 使用CA私钥为用户私钥签发一个短期证书
+          ssh-keygen -s ~/.ssh/ca_key \
+            -I "github-actions-deploy" \
+            -n "$ECS_USER" \
+            -V +1h \
+            ~/.ssh/deploy_key
+
+          # 2. 同步构建产物到 ECS（排除 node_modules、.next/cache 等）
           rsync -avz \
             --exclude='node_modules' \
             --exclude='.git' \
             --exclude='.next/cache' \
             --exclude='pnpm-lock.yaml' \
             ./ \
-            -e "ssh -p $ECS_PORT -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
+            -e "ssh -p $ECS_PORT -i ~/.ssh/deploy_key -o CertificateFile=~/.ssh/deploy_key-cert.pub -o StrictHostKeyChecking=no" \
             $ECS_USER@$ECS_HOST:/var/www/next-app/
 
           # 远程执行部署脚本
-          ssh -p $ECS_PORT -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no \
-            $ECS_USER@$ECS_HOST "zsh /var/www/next-app/deploy.sh"
+          ssh -p $ECS_PORT \
+              -i ~/.ssh/deploy_key \
+              -o CertificateFile=~/.ssh/deploy_key-cert.pub \
+              -o StrictHostKeyChecking=no \
+              $ECS_USER@$ECS_HOST "zsh /var/www/next-app/deploy.sh"
